@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:wallpaper_app/screens/home_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wallpaper_app/data/remote/api_helper.dart';
+import 'package:wallpaper_app/screens/home/cubit/home_cubit.dart';
+import 'package:wallpaper_app/screens/home/home_page.dart';
+
+import 'data/repository/wallpaper_repository.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +22,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: BlocProvider(
+        create: (context) => HomeCubit(
+            wallpaperRepository: WallpaperRepository(apiHelper: ApiHelper())),
+        child: HomePage(),
+      ),
     );
   }
 }

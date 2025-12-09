@@ -1,12 +1,27 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wallpaper_app/app_widgets/wallpaper_bg_widget.dart';
 import 'package:wallpaper_app/constant/app_constants.dart';
+import 'package:wallpaper_app/screens/home/cubit/home_cubit.dart';
+import 'package:wallpaper_app/screens/home/cubit/home_state.dart';
 import 'package:wallpaper_app/utils/utils_helper.dart';
 
-class HomePage extends StatelessWidget
+class HomePage extends StatefulWidget
 {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   var searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    BlocProvider.of<HomeCubit>(context).getTrendingWallpapers();
+  }
+
   @override
   Widget build(BuildContext context)
   {
@@ -72,17 +87,33 @@ class HomePage extends StatelessWidget
 
           SizedBox(
             height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: AppConstants.mCategories.length,
-                itemBuilder: (_,index)
-                    {
-                      return Padding(
-                        padding: EdgeInsets.only(left: 11, right: index == AppConstants.mCategories.length -1 ? 11 : 0),
-                        child: WallpaperBgWidget(imgUrl: AppConstants.mCategories[index]['image']),
-                      );
-                    }
-            ),
+            child: BlocBuilder<HomeCubit, HomeState>(
+              builder: (_,state){
+                if(state is HomeLoadingState){
+                  return Center(child: CircularProgressIndicator(),);
+                } else if (state is HomeErrorState){
+                  return Center(
+                    child: Text('${state.errorMsg}'),
+                  );
+                } else if (state is HomeLoadedState) {
+                  return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: state.listPhotos.length,
+                      itemBuilder: (_,index)
+                      {
+
+                        var eachPhoto = state.listPhotos[index];
+
+                        return Padding(
+                          padding: EdgeInsets.only(left: 11, right: index == state.listPhotos.length -1 ? 11 : 0),
+                          child: WallpaperBgWidget(imgUrl: eachPhoto.src!.portrait!),
+                        );
+                      }
+                  );
+                }
+                return Container();
+              },
+            )
           ),
 
           SizedBox(
