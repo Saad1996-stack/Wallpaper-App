@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppColors{
@@ -55,5 +56,18 @@ TextStyle mTextStyle25({
       fontFamily: 'mainFont'
   );
 }
+
+TextStyle mTextStyle34({
+  Color mColor = Colors.black,
+  mFontWeight = FontWeight.normal})
+{
+  return TextStyle(
+    fontSize: 34,
+    fontWeight: mFontWeight,
+    color: mColor,
+    fontFamily: 'mainFont'
+  );
+}
+
 
 

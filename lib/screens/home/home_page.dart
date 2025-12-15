@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wallpaper_app/app_widgets/wallpaper_bg_widget.dart';
 import 'package:wallpaper_app/constant/app_constants.dart';
+import 'package:wallpaper_app/data/remote/api_helper.dart';
+import 'package:wallpaper_app/data/repository/wallpaper_repository.dart';
 import 'package:wallpaper_app/screens/home/cubit/home_cubit.dart';
 import 'package:wallpaper_app/screens/home/cubit/home_state.dart';
+import 'package:wallpaper_app/screens/search/cubit/search_cubit.dart';
 import 'package:wallpaper_app/utils/utils_helper.dart';
 
-class HomePage extends StatefulWidget
-{
+import '../search/searched_wallpaper_page.dart';
+
+class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -23,51 +27,69 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context)
-  {
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryLightColor,
       body: ListView(
         scrollDirection: Axis.vertical,
+
         ///1
         children: [
           SizedBox(
-              height: 40,
+            height: 40,
           ),
-
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               controller: searchController,
+              style: mTextStyle12(),
               decoration: InputDecoration(
-                filled: true,
-                suffixIcon: Icon(Icons.search_sharp, color: Colors.grey.shade400,),
-                fillColor: AppColors.secondaryLightColor,
-                hintText: "Find Wallpaper..",
-                hintStyle: mTextStyle12(mColor: Colors.grey.shade400),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: Colors.transparent,
-                    width: 0,
-                  )
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: Colors.transparent,
-                    width: 0,
+                  filled: true,
+                  suffixIcon: InkWell(
+                      onTap: () {
+                        if (searchController.text.isNotEmpty) {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => BlocProvider(
+                                        create: (context) => SearchCubit(
+                                          wallpaperRepository:
+                                              WallpaperRepository(
+                                                  apiHelper: ApiHelper()),
+                                        ),
+                                        child: SearchedWallpaperPage(
+                                          query: searchController.text,
+                                        ),
+                                      )));
+                        }
+                      },
+                      child: Icon(
+                        Icons.search_sharp,
+                        color: Colors.grey.shade400,
+                      )),
+                  fillColor: AppColors.secondaryLightColor,
+                  hintText: "Find Wallpaper..",
+                  hintStyle: mTextStyle12(mColor: Colors.grey.shade400),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color: Colors.transparent,
+                        width: 0,
+                      )),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(
+                      color: Colors.transparent,
+                      width: 0,
+                    ),
                   ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(
-                    color: Colors.transparent,
-                    width: 0,
-                  )
-                )
-              ),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color: Colors.transparent,
+                        width: 0,
+                      ))),
             ),
           ),
 
@@ -78,7 +100,10 @@ class _HomePageState extends State<HomePage> {
           ///2
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Best of Month', style: mTextStyle16(mFontWeight: FontWeight.bold),),
+            child: Text(
+              'Best of Month',
+              style: mTextStyle16(mFontWeight: FontWeight.bold),
+            ),
           ),
 
           SizedBox(
@@ -86,35 +111,38 @@ class _HomePageState extends State<HomePage> {
           ),
 
           SizedBox(
-            height: 200,
-            child: BlocBuilder<HomeCubit, HomeState>(
-              builder: (_,state){
-                if(state is HomeLoadingState){
-                  return Center(child: CircularProgressIndicator(),);
-                } else if (state is HomeErrorState){
-                  return Center(
-                    child: Text('${state.errorMsg}'),
-                  );
-                } else if (state is HomeLoadedState) {
-                  return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: state.listPhotos.length,
-                      itemBuilder: (_,index)
-                      {
+              height: 200,
+              child: BlocBuilder<HomeCubit, HomeState>(
+                builder: (_, state) {
+                  if (state is HomeLoadingState) {
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  } else if (state is HomeErrorState) {
+                    return Center(
+                      child: Text('${state.errorMsg}'),
+                    );
+                  } else if (state is HomeLoadedState) {
+                    return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: state.listPhotos.length,
+                        itemBuilder: (_, index) {
+                          var eachPhoto = state.listPhotos[index];
 
-                        var eachPhoto = state.listPhotos[index];
-
-                        return Padding(
-                          padding: EdgeInsets.only(left: 11, right: index == state.listPhotos.length -1 ? 11 : 0),
-                          child: WallpaperBgWidget(imgUrl: eachPhoto.src!.portrait!),
-                        );
-                      }
-                  );
-                }
-                return Container();
-              },
-            )
-          ),
+                          return Padding(
+                            padding: EdgeInsets.only(
+                                left: 11,
+                                right: index == state.listPhotos.length - 1
+                                    ? 11
+                                    : 0),
+                            child: WallpaperBgWidget(
+                                imgUrl: eachPhoto.src!.portrait!),
+                          );
+                        });
+                  }
+                  return Container();
+                },
+              )),
 
           SizedBox(
             height: 16,
@@ -124,7 +152,10 @@ class _HomePageState extends State<HomePage> {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Color Tone', style: mTextStyle16(mFontWeight: FontWeight.bold),),
+            child: Text(
+              'Color Tone',
+              style: mTextStyle16(mFontWeight: FontWeight.bold),
+            ),
           ),
 
           SizedBox(
@@ -136,14 +167,32 @@ class _HomePageState extends State<HomePage> {
             child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: AppConstants.mColors.length,
-                itemBuilder: (_,index)
-                {
+                itemBuilder: (_, index) {
                   return Padding(
-                    padding: EdgeInsets.only(left: 11, right: index == AppConstants.mColors.length -1 ? 11 : 0),
-                    child: getColorToneWidget(AppConstants.mColors[index])
-                  );
-                }
-            ),
+                      padding: EdgeInsets.only(
+                          left: 11,
+                          right: index == AppConstants.mColors.length - 1
+                              ? 11
+                              : 0),
+                      child: InkWell(
+                        onTap: ()
+                          {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BlocProvider(
+                                    create: (context) => SearchCubit(
+                                      wallpaperRepository: WallpaperRepository(
+                                          apiHelper: ApiHelper()),),
+                                    child: SearchedWallpaperPage(
+                                        query: searchController.text.isNotEmpty ? searchController.text: "Nature",
+                                        color: AppConstants.mColors[index]['code']),
+                                  ),
+
+                                ));
+                          },
+                          child: getColorToneWidget(AppConstants.mColors[index]['color'])));
+                }),
           ),
 
           SizedBox(
@@ -154,7 +203,10 @@ class _HomePageState extends State<HomePage> {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Categories', style: mTextStyle16(mFontWeight: FontWeight.bold),),
+            child: Text(
+              'Categories',
+              style: mTextStyle16(mFontWeight: FontWeight.bold),
+            ),
           ),
 
           SizedBox(
@@ -164,28 +216,44 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 11,
                   crossAxisSpacing: 11,
-                  childAspectRatio: 9/4,
+                  childAspectRatio: 9 / 4,
                 ),
                 itemCount: AppConstants.mCategories.length,
-                itemBuilder: (_,index)
-                {
-                  return getCategoryWidget(AppConstants.mCategories[index]['image'], AppConstants.mCategories[index]['title']);
-                }
-            ),
-          ),
+                itemBuilder: (_, index) {
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BlocProvider(
+                                create: (context) => SearchCubit(
+                                    wallpaperRepository: WallpaperRepository(
+                                        apiHelper: ApiHelper()),),
+                              child: SearchedWallpaperPage(
+                                  query: AppConstants.mCategories[index]
+                                  ['title']),
+                            ),
 
+                          ));
+                    },
+                    child: getCategoryWidget(
+                        AppConstants.mCategories[index]['image'],
+                        AppConstants.mCategories[index]['title']),
+                  );
+                }),
+          ),
         ],
       ),
     );
   }
 
-  Widget getColorToneWidget(Color mColor){
+  Widget getColorToneWidget(Color mColor) {
     return Container(
       width: 50,
       height: 50,
@@ -196,21 +264,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget getCategoryWidget(String imgUrl, String title)
-  {
+  Widget getCategoryWidget(String imgUrl, String title) {
     return Container(
       width: 200,
       height: 100,
       child: Center(
-        child: Text(title, style: mTextStyle14(mColor: Colors.white),),
+        child: Text(
+          title,
+          style: mTextStyle14(mColor: Colors.white),
+        ),
       ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(21),
-        image: DecorationImage(
-          image: NetworkImage(imgUrl),
-          fit: BoxFit.fill,
-        )
-      ),
+          borderRadius: BorderRadius.circular(21),
+          image: DecorationImage(
+            image: NetworkImage(imgUrl),
+            fit: BoxFit.fill,
+          )),
     );
   }
 }
