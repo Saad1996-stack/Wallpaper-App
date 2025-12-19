@@ -5,6 +5,7 @@ import 'package:wallpaper_app/app_widgets/wallpaper_bg_widget.dart';
 import 'package:wallpaper_app/constant/app_constants.dart';
 import 'package:wallpaper_app/data/remote/api_helper.dart';
 import 'package:wallpaper_app/data/repository/wallpaper_repository.dart';
+import 'package:wallpaper_app/screens/detail_wallpaper_page.dart';
 import 'package:wallpaper_app/screens/home/cubit/home_cubit.dart';
 import 'package:wallpaper_app/screens/home/cubit/home_state.dart';
 import 'package:wallpaper_app/screens/search/cubit/search_cubit.dart';
@@ -135,8 +136,14 @@ class _HomePageState extends State<HomePage> {
                                 right: index == state.listPhotos.length - 1
                                     ? 11
                                     : 0),
-                            child: WallpaperBgWidget(
-                                imgUrl: eachPhoto.src!.portrait!),
+                            child: InkWell(
+                              onTap: ()
+                              {
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=> DetailWallpaperPage(imgModel: eachPhoto.src!,)));
+                              },
+                              child: WallpaperBgWidget(
+                                  imgUrl: eachPhoto.src!.portrait!),
+                            ),
                           );
                         });
                   }

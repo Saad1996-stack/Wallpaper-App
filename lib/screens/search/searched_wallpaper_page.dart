@@ -5,10 +5,11 @@ import 'package:wallpaper_app/app_widgets/wallpaper_bg_widget.dart';
 import 'package:wallpaper_app/screens/search/cubit/search_cubit.dart';
 import 'package:wallpaper_app/utils/utils_helper.dart';
 
+import '../../models/wallpaper_model.dart';
+import '../detail_wallpaper_page.dart';
 import 'cubit/search_state.dart';
 
-class SearchedWallpaperPage extends StatefulWidget
-{
+class SearchedWallpaperPage extends StatefulWidget {
   String query;
   String color;
   SearchedWallpaperPage({required this.query, this.color = ""});
@@ -18,74 +19,109 @@ class SearchedWallpaperPage extends StatefulWidget
 }
 
 class _SearchedWallpaperPageState extends State<SearchedWallpaperPage> {
+  ScrollController? scrollController;
+  num totalWallpaperCount = 0;
+  int totalNoPages = 1;
+  int pageCount = 1;
+  List<PhotoModel> allWallpapers = [];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
 
-    BlocProvider.of<SearchCubit>(context).getSearchWallpaper(query: widget.query, color: widget.color);
+    scrollController = ScrollController();
+    scrollController!.addListener(() {
+      if (scrollController!.position.pixels ==
+          scrollController!.position.maxScrollExtent) {
+        print("End of Listing");
+        totalNoPages = totalWallpaperCount ~/ 15 + 1;
+        if (totalNoPages > pageCount) {
+          pageCount++;
+
+          BlocProvider.of<SearchCubit>(context).getSearchWallpaper(
+              query: widget.query, color: widget.color, page: pageCount);
+        } else {
+          print("You\'ve reached the end of this category wallpapers!");
+        }
+      }
+    });
+
+    BlocProvider.of<SearchCubit>(context)
+        .getSearchWallpaper(query: widget.query, color: widget.color);
   }
+
   @override
-  Widget build(BuildContext context)
-  {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryLightColor,
-      body: BlocBuilder<SearchCubit, SearchState>
-        (
-        builder: (_, state)
-        {
-          if(state is SearchLoadingState)
-            {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }else if(state is SearchErrorState)
-              {
-                return Center(
-                  child: Text(state.errorMsg),
-                );
-              }else if(state is SearchLoadedState)
-                {
+        backgroundColor: AppColors.primaryLightColor,
+        body: BlocListener<SearchCubit, SearchState>(
+          listener: (_, state) {
+            if (state is SearchLoadingState) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pageCount !=1 ? "Next Page Loading.." : "Loading")));
+            } else if (state is SearchErrorState) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMsg)));
+            } else if (state is SearchLoadedState) {
+              totalWallpaperCount = state.totalWallpapers!;
+              allWallpapers.addAll(state.listPhoto);
+              setState(() {
+
+              });
+            }
+          },
+          child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 27),
+      child: ListView(
+        controller: scrollController,
+        children: [
+          SizedBox(
+            height: 40,
+          ),
+          Text(
+            widget.query,
+            style: mTextStyle34(mFontWeight: FontWeight.w900),
+          ),
+          Text(
+            "${totalWallpaperCount} wallpaper available",
+            style: mTextStyle14(),
+          ),
+          SizedBox(
+            height: 21,
+          ),
+          Container(
+            child: GridView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                gridDelegate:
+                SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 11,
+                  crossAxisSpacing: 11,
+                  childAspectRatio: 3 / 4,
+                ),
+                itemCount: allWallpapers.length,
+                itemBuilder: (_, index) {
+                  var eachPhoto = allWallpapers[index];
                   return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 27),
-                    child: ListView(
-                      children: [
-                        SizedBox(
-                          height: 40,
-                        ),
-                        Text(widget.query, style: mTextStyle34(mFontWeight: FontWeight.w900),),
-                        Text("${state.totalWallpapers} wallpaper available", style: mTextStyle14(),),
-                        SizedBox(
-                          height: 21,
-                        ),
-                        Container(
-                          child: GridView.builder(
-                            physics: NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 11,
-                                crossAxisSpacing: 11,
-                                childAspectRatio: 3 / 4,
-                              ),
-                              itemCount: state.listPhoto.length,
-                              itemBuilder: (_, index) {
-                                var eachPhoto = state.listPhoto[index];
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: index==state.listPhoto.length-1 ? 11 : 0),
-                                  child: WallpaperBgWidget(imgUrl: eachPhoto.src!.portrait!,
-                                  ),
-                                );
-                              }),
-                        ),
-                      ],
+                    padding: EdgeInsets.only(
+                        bottom: index == allWallpapers.length - 1
+                            ? 11
+                            : 0),
+                    child: InkWell(
+                      onTap: ()
+                      {
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=> DetailWallpaperPage(imgModel: eachPhoto.src!,)));
+                      },
+                      child: WallpaperBgWidget(
+                        imgUrl: eachPhoto.src!.portrait!,
+                      ),
                     ),
                   );
-                }
-          return Container();
-        },
-      )
-    );
+                }),
+          ),
+        ],
+      ),
+    ),
+        ));
   }
 }
